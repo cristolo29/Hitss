@@ -126,17 +126,17 @@ main() {
     log_info "Daemon iniciado (PID $$). Intervalo: ${INTERVAL}s. Log: $LOG_FILE"
 
     local iteration=0
-    local current_day
-    current_day=$(date +'%Y-%m-%d')
+    local current_hour
+    current_hour=$(date +'%Y-%m-%d %H')
 
     while true; do
         iteration=$(( iteration + 1 ))
 
-        local today
-        today=$(date +'%Y-%m-%d')
-        if [[ "$today" != "$current_day" ]]; then
-            rotate_daily_logs "$current_day"
-            current_day="$today"
+        local this_hour
+        this_hour=$(date +'%Y-%m-%d %H')
+        if [[ "$this_hour" != "$current_hour" ]]; then
+            rotate_daily_logs "$current_hour"
+            current_hour="$this_hour"
             iteration=1
         fi
 
