@@ -35,6 +35,7 @@ done < "$ENV_FILE"
 INTERVAL=300
 LOG_FILE="${LOG_FILE:-${ROOT_DIR}/logs/oracle_update_daemon.log}"
 PID_FILE="${PID_FILE:-${ROOT_DIR}/run/oracle_update_daemon.pid}"
+NOHUP_OUT="${NOHUP_OUT:-${ROOT_DIR}/nohup.out}"
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
 log_info()  { printf '[%s] INFO:  %s\n'  "$(date +'%Y-%m-%d %H:%M:%S')" "$*" | tee -a "$LOG_FILE"; }
@@ -91,6 +92,17 @@ EOF
     log_info "UPDATE completado exitosamente. Salida: ${output:-sin salida}"
 }
 
+# ─── Limpieza diaria de logs ──────────────────────────────────────────────────
+rotate_daily_logs() {
+    local yesterday="$1"
+    printf '[%s] INFO:  Rotación diaria. Limpiando logs del día %s...\n' \
+        "$(date +'%Y-%m-%d %H:%M:%S')" "$yesterday" >> "$LOG_FILE"
+    # Truncar en sitio para no romper el descriptor abierto por tee
+    > "$LOG_FILE"
+    [[ -f "$NOHUP_OUT" ]] && > "$NOHUP_OUT"
+    log_info "Logs limpiados. Nuevo día iniciado."
+}
+
 # ─── Evitar instancias duplicadas ─────────────────────────────────────────────
 guard_single_instance() {
     if [[ -f "$PID_FILE" ]]; then
@@ -114,8 +126,20 @@ main() {
     log_info "Daemon iniciado (PID $$). Intervalo: ${INTERVAL}s. Log: $LOG_FILE"
 
     local iteration=0
+    local current_day
+    current_day=$(date +'%Y-%m-%d')
+
     while true; do
         iteration=$(( iteration + 1 ))
+
+        local today
+        today=$(date +'%Y-%m-%d')
+        if [[ "$today" != "$current_day" ]]; then
+            rotate_daily_logs "$current_day"
+            current_day="$today"
+            iteration=1
+        fi
+
         log_info "── Iteración #${iteration} ──────────────────────"
 
         run_update || log_warn "Iteración #${iteration} con errores. Continuando..."
