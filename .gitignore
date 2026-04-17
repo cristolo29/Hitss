@@ -1,0 +1,9 @@
+# Credenciales — nunca versionar
+.claude
+.env
+*.env
+.env.*
+
+# Logs y PID
+*.log
+*.pid
