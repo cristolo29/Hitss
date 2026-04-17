@@ -12,7 +12,7 @@ if [[ ! -f "$ENV_FILE" ]]; then
 fi
 
 # Verificar permisos: solo el propietario debe poder leerlo
-env_perms=$(stat -f "%A" "$ENV_FILE" 2>/dev/null || stat -c "%a" "$ENV_FILE")
+env_perms=$(stat -f "%Op" "$ENV_FILE" 2>/dev/null | grep -oE '[0-7]{3}$' || stat -c "%a" "$ENV_FILE")
 if [[ "$env_perms" != "600" && "$env_perms" != "400" ]]; then
     printf 'ERROR: permisos inseguros en %s (%s). Ejecuta: chmod 600 %s\n' \
         "$ENV_FILE" "$env_perms" "$ENV_FILE" >&2
